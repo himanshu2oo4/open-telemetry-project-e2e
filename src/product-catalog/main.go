@@ -252,10 +252,10 @@ func (p *productCatalog) GetProduct(ctx context.Context, req *pb.GetProductReque
 
 	// GetProduct will fail on a specific product when feature flag is enabled
 	if p.checkProductFailure(ctx, req.Id) {
-		msg := fmt.Sprintf("Error: Product Catalog Fail Feature Flag Enabled")
+		msg := "Error: Product Catalog Fail Feature Flag Enabled"
 		span.SetStatus(otelcodes.Error, msg)
 		span.AddEvent(msg)
-		return nil, status.Errorf(codes.Internal, msg)
+		return nil, status.Error(codes.Internal, msg)
 	}
 
 	var found *pb.Product
@@ -270,7 +270,7 @@ func (p *productCatalog) GetProduct(ctx context.Context, req *pb.GetProductReque
 		msg := fmt.Sprintf("Product Not Found: %s", req.Id)
 		span.SetStatus(otelcodes.Error, msg)
 		span.AddEvent(msg)
-		return nil, status.Errorf(codes.NotFound, msg)
+		return nil, status.Error(codes.NotFound, msg)
 	}
 
 	msg := fmt.Sprintf("Product Found - ID: %s, Name: %s", req.Id, found.Name)
@@ -309,13 +309,12 @@ func (p *productCatalog) checkProductFailure(ctx context.Context, id string) boo
 	return failureEnabled
 }
 
-func createClient(ctx context.Context, svcAddr string) (*grpc.ClientConn, error) {
-	return grpc.DialContext(ctx, svcAddr,
+func createClient(svcAddr string) (*grpc.ClientConn, error) {
+	return grpc.NewClient(svcAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 	)
 }
-
 
 
 
